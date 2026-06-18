@@ -48,6 +48,7 @@ If this repository helped you integrate Unity Ads into your Pygame Android game,
 *  Downloading and rating **Skiptrace** on Google Play
 
 Play Store: https://play.google.com/store/apps/details?id=com.almightyprime.skiptrace
+
 press coverage: https://www.fixgamingchannel.com/from-a-jackie-chan-movie-to-google-play-the-story-of-skiptrace/
 
 Your support helps me continue creating tutorials and open-source resources for the Pygame Android community.
