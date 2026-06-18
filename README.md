@@ -14,6 +14,11 @@ You must create a Unity Ads account and obtain:
 
 Replace the placeholder values in the example code with your own IDs.
 
+- Copy files into your project
+- Add ShowListenerShim.java to correct package path
+- Run:
+   buildozer android debug
+
 If you already have a project, compare your configuration against the provided spec file and copy the Unity Ads related settings as needed.
 
 ## Project Structure
