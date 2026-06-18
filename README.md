@@ -1,3 +1,6 @@
+# Pygame Android Rewarded Ads
+
+Add Unity Rewarded Ads to Pygame games compiled to Android using Buildozer and Pyjnius.
 ## Buildozer Configuration
 
 A complete working `buildozer.spec` file is included in this repository.
