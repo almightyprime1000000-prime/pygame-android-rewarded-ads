@@ -1,4 +1,4 @@
-# Google Play In-App Purchases in Python/Pygame (Android)
+# Unity Rewarded Ads in Python/Pygame (Android)
 ### A real-world implementation by Wonder Kofi Junior (AlmightyPrime)
 ### From the game: Skiptrace — https://play.google.com/store/apps/details?id=com.almightyprime.skiptrace
 
@@ -6,106 +6,93 @@
 
 ## What this package contains
 
-This is the complete, working implementation of Google Play In-App Purchases (IAP) inside a Python/Pygame Android game. Every file here is extracted from Skiptrace — a real game live on the Google Play Store. This is not a proof of concept. It runs in production.
+This is the complete, working implementation of Unity Rewarded Ads inside a Python/Pygame Android game. Every file here is extracted from Skiptrace — a real game live on the Google Play Store. This is not a proof of concept. It runs in production.
 
 ```
-skiptrace_iap_tutorial/
+skiptrace_ads_tutorial/
 │
 ├── python/
-│   └── iap.py                   ← The Python IAP wrapper (copy into your project)
+│   └── unity_ads_android.py     ← The main Python wrapper (copy into your project)
 │
 ├── java/
-│   └── BillingShim.java         ← Custom Java billing wrapper (compile into your APK)
+│   └── ShowListenerShim.java    ← Custom Java listener (compile into your APK)
 │
 ├── buildozer/
-│   └── buildozer.spec           ← Buildozer config with [IAP RELEVANT] markers
+│   └── buildozer.spec           ← Full buildozer config with [ADS RELEVANT] markers
 │
 └── example_usage/
-    └── example_usage.py         ← Full game loop integration pattern
+    └── example_usage.py         ← How to wire it into your game loop
 ```
 
 ---
 
 ## Why a Java shim is needed
 
-The Google Play Billing Library uses complex asynchronous Java callbacks that Pyjnius (the Python-Java bridge) cannot reliably implement in Python. Billing events fire on background threads at unpredictable times, which causes crashes or silent failures when handled directly in Python.
+Pyjnius (the Python-Java bridge used in Buildozer/p4a projects) cannot reliably implement the `IUnityAdsShowListener` interface in Python. Callbacks fire on Android's UI thread at unpredictable times, causing crashes or silent failures.
 
-The fix: wrap all billing logic in a Java class (`BillingShim.java`) that pushes results into a thread-safe event queue. Python polls the queue each game frame using `poll_purchase()` — simple, safe, and crash-free.
+The fix: implement the listener in pure Java (`ShowListenerShim.java`), store results as static boolean flags, and poll them safely from Python each frame using `get_reward()`.
 
 ---
 
-## Quick start (4 steps)
+## Quick start (3 steps)
 
 ### 1. Copy the Python file
-Place `iap.py` in your project root (same folder as `main.py`).
+Place `unity_ads_android.py` in your project root (same folder as `main.py`).
 
 ### 2. Add the Java shim
-Place `BillingShim.java` in:
+Place `ShowListenerShim.java` in:
 ```
-your_project/src/main/java/com/yourpackage/yourapp/BillingShim.java
+your_project/src/main/java/com/yourpackage/yourapp/ShowListenerShim.java
 ```
 Update the `package` line at the top to match your own package name.
 
-Then in `buildozer.spec`:
+Then in `buildozer.spec`, add:
 ```
 android.add_src = src/main/java
 ```
 
-### 3. Add the Gradle dependency and permission
+### 3. Add the Gradle dependency
 In `buildozer.spec`:
 ```
-android.permissions = INTERNET, ACCESS_NETWORK_STATE, ACCESS_WIFI_STATE, com.android.vending.BILLING
-android.gradle_dependencies = com.android.billingclient:billing:8.0.0, androidx.fragment:fragment:1.8.9
+android.gradle_dependencies = com.unity3d.ads:unity-ads:4.12.2
+android.gradle_repositories = "https://maven.google.com/", "https://unity3d.jfrog.io/artifactory/unity-ads"
 android.enable_multidex = True
 ```
-
-### 4. Set up your products in Google Play Console
-- Go to Play Console → Your App → Monetize → Products → In-app products
-- Create a product for each item (e.g. "fruitpack1")
-- The product ID must exactly match what you pass to `iap.buy()`
-- Products only work on signed APKs uploaded to a testing track
+MultiDex is required — Unity Ads pushes the method count over Android's 64K limit.
 
 ---
 
 ## Using it in your game
 
 ```python
-import iap
+import unity_ads_android as ads
 
 # At startup (once)
-iap.init_iap()
+ads.start_unity_ads(game_id="YOUR_UNITY_GAME_ID", test_mode=False)
 
-# When player clicks "Buy"
-iap.buy("your_product_id")
+# When player clicks "Watch Ad"
+ads.show_rewarded("Rewarded_Android")
 
 # Every frame in your game loop
-result = iap.poll_purchase()
-if result:
-    if result.startswith("purchased:"):
-        product_id = result.split(":")[1]
-        # Give the player their reward
-    elif result == "failed":
-        # Purchase cancelled or failed
-    elif result == "ready":
-        pass  # Billing connected — swallow silently
+reward = ads.get_reward()
+if reward == "rewarded":
+    # Give the player their reward
+elif reward == "skipped":
+    # No reward
+elif reward == "failed":
+    # Ad failed — handle gracefully
 ```
 
-See `example_usage/example_usage.py` for the full pattern including cooldown guards, every event type handled, and the UI feedback message system from Skiptrace.
+See `example_usage/example_usage.py` for the full pattern including state tracking and timeout handling.
 
 ---
 
 ## Important notes
 
-- IAP **only works on a signed APK/AAB** uploaded to Google Play's testing track
-- It will NOT work on a debug build run directly via `buildozer android debug`
-- Make sure `com.android.vending.BILLING` is in your permissions or purchases will silently fail
-- The `BillingShim` uses `consumeAsync()` for consumable items (things the player can buy multiple times). For non-consumable items (e.g. "remove ads"), you would use `acknowledgePurchase()` instead — see comments in `BillingShim.java`
-
----
-
-## Also available: Unity Rewarded Ads
-
-If you need Unity Rewarded Ads for your Pygame Android game, a separate tutorial package is available covering `unity_ads_android.py`, `ShowListenerShim.java`, and full integration — also extracted from Skiptrace.
+- Set `test_mode=True` while developing, `False` before publishing
+- Your Unity Game ID comes from: Unity Dashboard → Monetization → Get Started
+- The placement ID `"Rewarded_Android"` must match what you set in the Unity dashboard
+- In `buildozer.spec`, set `android.meta_data = com.unity3d.ads.metadata.testmode=False` for production builds
 
 ---
 
