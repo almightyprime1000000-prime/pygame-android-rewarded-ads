@@ -99,7 +99,7 @@ See `example_usage/example_usage.py` for the full pattern including state tracki
 ## About this implementation
 
 Built by **Wonder Kofi Junior** (AlmightyPrime), a solo developer from Ghana.
-Two years of learning, failing, and finishing — on midnight internet data.
+Two years of learning, failing, and finishing.
 
 
 ## Support The Project
